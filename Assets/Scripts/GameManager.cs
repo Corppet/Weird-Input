@@ -2,18 +2,27 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.UI;
 using TMPro;
+
+public enum ControlScheme
+{
+    Normal,
+    Switched
+}
 
 public class GameManager : MonoBehaviour
 {
     [HideInInspector] public static GameManager instance { private set; get; }
 
     [HideInInspector] public bool isInPlay;
+    [HideInInspector] public ControlScheme currentControls;
 
     [HideInInspector] public UnityEvent onIncorrectLetter;
     [HideInInspector] public UnityEvent onCorrectLetter;
     [HideInInspector] public UnityEvent onCompleteWord;
+
+    [HideInInspector] public UnityEvent onCompleteCourse;
+    [HideInInspector] public UnityEvent onFailCourse;
 
     [HideInInspector] public string currentWord;
     [HideInInspector] public string remainingString;
@@ -25,10 +34,34 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Color completedStringColor = Color.yellow;
     [SerializeField] private Color finishedWordColor = Color.green;
 
+    [Space(5)]
+
+    public float speed;
+
+    [Space(10)]
+
+    [SerializeField] private ObstacleCourses courses;
     [SerializeField] private References references;
 
     private List<string> availableWords;
     private List<string> usedWords;
+
+    private bool isWordComplete;
+    private bool isCourseComplete;
+
+    private int score;
+
+    public void GameOver()
+    {
+        isInPlay = false;
+    }
+
+    public void SetupNewLevel()
+    {
+        // new word
+        isWordComplete = false;
+        SetNewWord();
+    }
 
     private void Awake()
     {
@@ -46,24 +79,54 @@ public class GameManager : MonoBehaviour
         onCorrectLetter = new UnityEvent();
         onCompleteWord = new UnityEvent();
 
+        onCompleteCourse = new UnityEvent();
+        onFailCourse = new UnityEvent();
+
         isInPlay = true;
+        currentControls = ControlScheme.Normal;
     }
 
     private void Start()
     {
         ProcessWordBank();
         SetNewWord();
+
+        onFailCourse.AddListener(GameOver);
+        onIncorrectLetter.AddListener(GameOver);
+
+        onCompleteWord.AddListener(() => isWordComplete = true);
+        onCompleteCourse.AddListener(() => isCourseComplete = true);
     }
 
     private void Update()
     {
-        CheckInput();
+        switch (currentControls)
+        {
+            case ControlScheme.Normal:
+                CheckInput();
+                break;
+            case ControlScheme.Switched:
+                MoveBall();
+                break;
+        }
+
+        if (isWordComplete && isCourseComplete)
+        {
+            CompleteLevel();
+        }
     }
 
     private void UpdateText()
     {
         references.wordText.text = "<color=#" + ColorUtility.ToHtmlStringRGB(completedStringColor) + ">"
             + completedString + "</color>" + remainingString;
+    }
+
+    private void CompleteLevel()
+    {
+        score++;
+
+        SetupNewLevel();
     }
 
     private void InputChar(char c)
@@ -143,10 +206,40 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void MoveBall()
+    {
+        // move the player ball based on horizontal and vertical input
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
+        Vector3 direction = new Vector3(horizontal, vertical, 0);
+        references.playerBall.Translate(direction * speed * Time.deltaTime);
+    }
+
     [System.Serializable]
     public struct References
     {
+        [Header("UI")]
         public Canvas canvas;
         public TMP_Text wordText;
+
+        [Space(5)]
+
+        [Header("Player")]
+        public Transform playerBall;
+
+        [Space(5)]
+
+        [Header("Obstacles")]
+        public Transform topGate;
+        public Transform bottomGate;
+    }
+
+    [System.Serializable]
+    public struct ObstacleCourses
+    {
+        [HideInInspector] public bool isReversed;
+
+        public GameObject[] normalCourses;
+        public GameObject[] reversedCourses;
     }
 }
