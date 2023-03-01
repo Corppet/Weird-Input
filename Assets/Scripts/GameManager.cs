@@ -9,6 +9,8 @@ public class GameManager : MonoBehaviour
 {
     [HideInInspector] public static GameManager instance { private set; get; }
 
+    [HideInInspector] public bool isInPlay;
+
     [HideInInspector] public UnityEvent onIncorrectLetter;
     [HideInInspector] public UnityEvent onCorrectLetter;
     [HideInInspector] public UnityEvent onCompleteWord;
@@ -21,6 +23,7 @@ public class GameManager : MonoBehaviour
         "Each line should be a single unique word.")]
     [SerializeField] private TextAsset wordBank;
     [SerializeField] private Color completedStringColor = Color.yellow;
+    [SerializeField] private Color finishedWordColor = Color.green;
 
     [SerializeField] private References references;
 
@@ -42,6 +45,8 @@ public class GameManager : MonoBehaviour
         onIncorrectLetter = new UnityEvent();
         onCorrectLetter = new UnityEvent();
         onCompleteWord = new UnityEvent();
+
+        isInPlay = true;
     }
 
     private void Start()
@@ -73,6 +78,13 @@ public class GameManager : MonoBehaviour
         else
         {
             onIncorrectLetter.Invoke();
+        }
+
+        if (remainingString.Length == 0)
+        {
+            references.wordText.text = "<color=#" + ColorUtility.ToHtmlStringRGB(finishedWordColor) + ">"
+                + completedString + "</color>";
+            onCompleteWord.Invoke();
         }
     }
 
