@@ -759,32 +759,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78bb36295c33d4a4fba3e62d13047af4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isInPlay: 0
-  currentControls: 0
-  onIncorrectLetter:
+  IsInPlay: 0
+  CurrentControls: 0
+  OnIncorrectLetter:
     m_PersistentCalls:
       m_Calls: []
-  onCorrectLetter:
+  OnCorrectLetter:
     m_PersistentCalls:
       m_Calls: []
-  onCompleteWord:
+  OnCompleteWord:
     m_PersistentCalls:
       m_Calls: []
-  onCompleteCourse:
+  OnCompleteCourse:
     m_PersistentCalls:
       m_Calls: []
-  onFailCourse:
+  OnFailCourse:
     m_PersistentCalls:
       m_Calls: []
-  currentWord: 
-  remainingString: 
-  completedString: 
+  CurrentWord: 
+  RemainingString: 
+  CompletedString: 
   wordBank: {fileID: 4900000, guid: e7de4ff4b1ef1334baf23263fc62d8f6, type: 3}
   completedStringColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   finishedWordColor: {r: 0, g: 1, b: 0, a: 1}
-  speed: 0
+  speed: 10
   courses:
-    isReversed: 0
+    IsReversed: 0
     normalCourses: []
     reversedCourses: []
   references:

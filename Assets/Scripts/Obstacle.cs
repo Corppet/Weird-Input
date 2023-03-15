@@ -10,7 +10,7 @@ public class Obstacle : MonoBehaviour
         if (collision.CompareTag("Player"))
         {
             Debug.Log("Game Over");
-            GameManager.instance.onFailCourse.Invoke();
+            GameManager.Instance.OnFailCourse.Invoke();
         }
     }
 }

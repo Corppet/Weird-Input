@@ -14,7 +14,7 @@ public class CursorController : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
+        if (!Instance)
         {
             Instance = this;
         }
@@ -28,12 +28,12 @@ public class CursorController : MonoBehaviour
 
     private void Update()
     {
-        if (!GameManager.instance.isInPlay)
+        if (!GameManager.Instance.IsInPlay)
             return;
 
         cursorPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        switch(GameManager.instance.currentControls)
+        switch(GameManager.Instance.CurrentControls)
         {
             case ControlScheme.Normal:
                 DragAndDrop();
@@ -45,17 +45,17 @@ public class CursorController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        switch(GameManager.instance.currentControls)
+        switch(GameManager.Instance.CurrentControls)
         {
             case ControlScheme.Normal:
-                MoveSelectedObject();
+                DragBall();
                 break;
             case ControlScheme.Switched:
                 break;
         }
     }
 
-    private void MoveSelectedObject()
+    private void DragBall()
     {
         if (selectedRB)
         {

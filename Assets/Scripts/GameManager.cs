@@ -12,21 +12,21 @@ public enum ControlScheme
 
 public class GameManager : MonoBehaviour
 {
-    [HideInInspector] public static GameManager instance { private set; get; }
+    [HideInInspector] public static GameManager Instance { private set; get; }
 
-    [HideInInspector] public bool isInPlay;
-    [HideInInspector] public ControlScheme currentControls;
+    [HideInInspector] public bool IsInPlay;
+    [HideInInspector] public ControlScheme CurrentControls;
 
-    [HideInInspector] public UnityEvent onIncorrectLetter;
-    [HideInInspector] public UnityEvent onCorrectLetter;
-    [HideInInspector] public UnityEvent onCompleteWord;
+    [HideInInspector] public UnityEvent OnIncorrectLetter;
+    [HideInInspector] public UnityEvent OnCorrectLetter;
+    [HideInInspector] public UnityEvent OnCompleteWord;
 
-    [HideInInspector] public UnityEvent onCompleteCourse;
-    [HideInInspector] public UnityEvent onFailCourse;
+    [HideInInspector] public UnityEvent OnCompleteCourse;
+    [HideInInspector] public UnityEvent OnFailCourse;
 
-    [HideInInspector] public string currentWord;
-    [HideInInspector] public string remainingString;
-    [HideInInspector] public string completedString;
+    [HideInInspector] public string CurrentWord;
+    [HideInInspector] public string RemainingString;
+    [HideInInspector] public string CompletedString;
 
     [Tooltip("Text file containing all the possible words. " +
         "Each line should be a single unique word.")]
@@ -36,7 +36,8 @@ public class GameManager : MonoBehaviour
 
     [Space(5)]
 
-    public float speed;
+    [Range(0f, 100f)]
+    public float speed = 10f;
 
     [Space(10)]
 
@@ -53,7 +54,7 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        isInPlay = false;
+        IsInPlay = false;
     }
 
     public void SetupNewLevel()
@@ -65,25 +66,25 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        if (instance == null)
+        if (!Instance)
         { 
-            instance = this; 
+            Instance = this; 
         }
-        else if (instance != this)
+        else
         {
             Destroy(gameObject);
         }
 
         // setup UnityEvents
-        onIncorrectLetter = new UnityEvent();
-        onCorrectLetter = new UnityEvent();
-        onCompleteWord = new UnityEvent();
+        OnIncorrectLetter = new();
+        OnCorrectLetter = new();
+        OnCompleteWord = new();
 
-        onCompleteCourse = new UnityEvent();
-        onFailCourse = new UnityEvent();
+        OnCompleteCourse = new();
+        OnFailCourse = new();
 
-        isInPlay = true;
-        currentControls = ControlScheme.Normal;
+        IsInPlay = true;
+        CurrentControls = ControlScheme.Switched;
     }
 
     private void Start()
@@ -91,22 +92,22 @@ public class GameManager : MonoBehaviour
         ProcessWordBank();
         SetNewWord();
 
-        onFailCourse.AddListener(GameOver);
-        onIncorrectLetter.AddListener(GameOver);
+        OnFailCourse.AddListener(GameOver);
+        OnIncorrectLetter.AddListener(GameOver);
 
-        onCompleteWord.AddListener(() => isWordComplete = true);
-        onCompleteCourse.AddListener(() => isCourseComplete = true);
+        OnCompleteWord.AddListener(() => isWordComplete = true);
+        OnCompleteCourse.AddListener(() => isCourseComplete = true);
     }
 
     private void Update()
     {
-        switch (currentControls)
+        switch (CurrentControls)
         {
             case ControlScheme.Normal:
                 CheckInput();
                 break;
             case ControlScheme.Switched:
-                MoveBall();
+                MoveBall(Time.deltaTime);
                 break;
         }
 
@@ -119,7 +120,7 @@ public class GameManager : MonoBehaviour
     private void UpdateText()
     {
         references.wordText.text = "<color=#" + ColorUtility.ToHtmlStringRGB(completedStringColor) + ">"
-            + completedString + "</color>" + remainingString;
+            + CompletedString + "</color>" + RemainingString;
     }
 
     private void CompleteLevel()
@@ -131,23 +132,23 @@ public class GameManager : MonoBehaviour
 
     private void InputChar(char c)
     {
-        if (remainingString.Length > 0 && remainingString[0] == c)
+        if (RemainingString.Length > 0 && RemainingString[0] == c)
         {
-            completedString += remainingString[0];
-            remainingString = remainingString.Substring(1);
+            CompletedString += RemainingString[0];
+            RemainingString = RemainingString.Substring(1);
             UpdateText();
-            onCorrectLetter.Invoke();
+            OnCorrectLetter.Invoke();
         }
         else
         {
-            onIncorrectLetter.Invoke();
+            OnIncorrectLetter.Invoke();
         }
 
-        if (remainingString.Length == 0)
+        if (RemainingString.Length == 0)
         {
             references.wordText.text = "<color=#" + ColorUtility.ToHtmlStringRGB(finishedWordColor) + ">"
-                + completedString + "</color>";
-            onCompleteWord.Invoke();
+                + CompletedString + "</color>";
+            OnCompleteWord.Invoke();
         }
     }
 
@@ -158,7 +159,7 @@ public class GameManager : MonoBehaviour
     {
         // each line in the wordBank is a new and unique word
         string[] words = wordBank.text.Split('\n');
-        availableWords = new List<string>(words);
+        availableWords = new(words);
 
         // remove any "invisible" chars
         for (int i = 0; i < availableWords.Count; i++)
@@ -166,7 +167,7 @@ public class GameManager : MonoBehaviour
             availableWords[i] = availableWords[i].Replace("\r", string.Empty);
         }
 
-        usedWords = new List<string>();
+        usedWords = new();
     }
 
     private string GetNewWord()
@@ -174,7 +175,7 @@ public class GameManager : MonoBehaviour
         // if there are no more words, reset the list
         if (availableWords.Count == 0)
         {
-            availableWords = new List<string>(usedWords);
+            availableWords = new(usedWords);
             usedWords.Clear();
         }
 
@@ -189,10 +190,10 @@ public class GameManager : MonoBehaviour
 
     private void SetNewWord()
     {
-        currentWord = GetNewWord();
-        remainingString = currentWord;
-        completedString = string.Empty;
-        references.wordText.text = currentWord;
+        CurrentWord = GetNewWord();
+        RemainingString = CurrentWord;
+        CompletedString = string.Empty;
+        references.wordText.text = CurrentWord;
     }
 
     private void CheckInput()
@@ -206,13 +207,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void MoveBall()
+    private void MoveBall(float deltaTime)
     {
         // move the player ball based on horizontal and vertical input
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-        Vector3 direction = new Vector3(horizontal, vertical, 0);
-        references.playerBall.Translate(direction * speed * Time.deltaTime);
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+        Vector3 direction = new(horizontal, vertical, 0);
+        references.playerBall.Translate(direction * speed * deltaTime);
     }
 
     [System.Serializable]
@@ -237,7 +238,7 @@ public class GameManager : MonoBehaviour
     [System.Serializable]
     public struct ObstacleCourses
     {
-        [HideInInspector] public bool isReversed;
+        [HideInInspector] public bool IsReversed;
 
         public GameObject[] normalCourses;
         public GameObject[] reversedCourses;

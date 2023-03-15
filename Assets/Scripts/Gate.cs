@@ -4,14 +4,14 @@ using UnityEngine;
 
 public class Gate : MonoBehaviour
 {
-    [HideInInspector] public bool isGoal;
+    [HideInInspector] public bool IsGoal;
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Player") && isGoal)
+        if (collision.CompareTag("Player") && IsGoal)
         {
             Debug.Log("Goal reached");
-            GameManager.instance.onCompleteCourse.Invoke();
+            GameManager.Instance.OnCompleteCourse.Invoke();
         }
     }
 }
