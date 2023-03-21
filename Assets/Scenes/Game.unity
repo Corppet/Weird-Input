@@ -2227,7 +2227,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsInPlay: 0
-  CurrentControls: 0
+  CurrentDifficulty: 0
   OnIncorrectLetter:
     m_PersistentCalls:
       m_Calls: []
@@ -2247,17 +2247,24 @@ MonoBehaviour:
   RemainingString: 
   CompletedString: 
   wordBank: {fileID: 4900000, guid: e7de4ff4b1ef1334baf23263fc62d8f6, type: 3}
+  easyMaxLength: 5
+  mediumMaxLength: 8
   completedStringColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   finishedWordColor: {r: 0, g: 1, b: 0, a: 1}
-  speed: 10
+  ballSpeed: 10
+  switchedControlsRate: 0.5
   courses:
     IsReversed: 0
-    normalCourses: []
+    easyCourses: []
+    mediumCourses: []
+    hardCourses: []
   references:
     canvas: {fileID: 1548822454}
+    scoreText: {fileID: 0}
     wordText: {fileID: 1431052465}
     onScreenKeyboard: {fileID: 682450984}
     playerBall: {fileID: 683697781}
+    obstacleParent: {fileID: 0}
     topGate: {fileID: 1033072548}
     bottomGate: {fileID: 6024988552601768281}
 --- !u!4 &883405293
