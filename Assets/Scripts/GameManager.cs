@@ -36,6 +36,7 @@ public class GameManager : MonoBehaviour
 
     [Space(5)]
 
+    [Header("Player Ball Settings")]
     [Range(0f, 100f)]
     public float speed = 10f;
 
@@ -62,6 +63,14 @@ public class GameManager : MonoBehaviour
         // new word
         isWordComplete = false;
         SetNewWord();
+    }
+
+    public void InputLetters(string letters)
+    {
+        foreach (char c in letters)
+        {
+            InputChar(c);
+        }
     }
 
     private void Awake()
@@ -213,7 +222,7 @@ public class GameManager : MonoBehaviour
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new(horizontal, vertical, 0);
-        references.playerBall.Translate(direction * speed * deltaTime);
+        references.playerBall.Translate(deltaTime * speed * direction);
     }
 
     [System.Serializable]
@@ -222,6 +231,7 @@ public class GameManager : MonoBehaviour
         [Header("UI")]
         public Canvas canvas;
         public TMP_Text wordText;
+        public GameObject onScreenKeyboard;
 
         [Space(5)]
 
@@ -241,6 +251,5 @@ public class GameManager : MonoBehaviour
         [HideInInspector] public bool IsReversed;
 
         public GameObject[] normalCourses;
-        public GameObject[] reversedCourses;
     }
 }

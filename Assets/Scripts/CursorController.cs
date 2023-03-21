@@ -33,7 +33,7 @@ public class CursorController : MonoBehaviour
 
         cursorPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        switch(GameManager.Instance.CurrentControls)
+        switch (GameManager.Instance.CurrentControls)
         {
             case ControlScheme.Normal:
                 DragAndDrop();
