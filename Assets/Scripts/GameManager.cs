@@ -10,12 +10,38 @@ public enum ControlScheme
     Switched
 }
 
+public enum Difficulty
+{
+    Easy,
+    Medium,
+    Hard
+}
+
 public class GameManager : MonoBehaviour
 {
     [HideInInspector] public static GameManager Instance { private set; get; }
 
     [HideInInspector] public bool IsInPlay;
-    [HideInInspector] public ControlScheme CurrentControls;
+    [HideInInspector]
+    public ControlScheme CurrentControls
+    {
+        set
+        {
+            switch (value)
+            {
+                case ControlScheme.Normal:
+                    references.onScreenKeyboard.gameObject.SetActive(false);
+                    break;
+                case ControlScheme.Switched:
+                    references.onScreenKeyboard.gameObject.SetActive(true);
+                    break;
+            }
+            CurrentControls = value;
+        }
+
+        get { return CurrentControls; }
+    }
+    [HideInInspector] public Difficulty CurrentDifficulty;
 
     [HideInInspector] public UnityEvent OnIncorrectLetter;
     [HideInInspector] public UnityEvent OnCorrectLetter;
@@ -28,17 +54,22 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public string RemainingString;
     [HideInInspector] public string CompletedString;
 
+    [Header("Word Settings")]
     [Tooltip("Text file containing all the possible words. " +
         "Each line should be a single unique word.")]
     [SerializeField] private TextAsset wordBank;
+    public int easyMaxLength = 5;
+    public int mediumMaxLength = 8;
     [SerializeField] private Color completedStringColor = Color.yellow;
     [SerializeField] private Color finishedWordColor = Color.green;
 
     [Space(5)]
 
-    [Header("Player Ball Settings")]
+    [Header("Player Settings")]
     [Range(0f, 100f)]
-    public float speed = 10f;
+    public float ballSpeed = 10f;
+    [Range(0f, 1f)]
+    public float switchedControlsRate = .5f;
 
     [Space(10)]
 
@@ -63,6 +94,20 @@ public class GameManager : MonoBehaviour
         // new word
         isWordComplete = false;
         SetNewWord();
+
+        // new obstacle course
+        isCourseComplete = false;
+        SetNewCourse();
+
+        // attempt to switch controls
+        if (Random.value < switchedControlsRate)
+        {
+            CurrentControls = ControlScheme.Switched;
+        }
+        else
+        {
+            CurrentControls = ControlScheme.Normal;
+        }
     }
 
     public void InputLetters(string letters)
@@ -92,8 +137,10 @@ public class GameManager : MonoBehaviour
         OnCompleteCourse = new();
         OnFailCourse = new();
 
+        // initialize variabbles
         IsInPlay = true;
         CurrentControls = ControlScheme.Switched;
+        CurrentDifficulty = Difficulty.Easy;
     }
 
     private void Start()
@@ -135,6 +182,7 @@ public class GameManager : MonoBehaviour
     private void CompleteLevel()
     {
         score++;
+        references.scoreText.text = score.ToString();
 
         SetupNewLevel();
     }
@@ -177,6 +225,17 @@ public class GameManager : MonoBehaviour
         }
 
         usedWords = new();
+
+        // debugging
+        string longestWord = string.Empty;
+        foreach (string word in availableWords)
+        {
+            if (word.Length <= longestWord.Length)
+                continue;
+
+            longestWord = word;
+        }
+        Debug.Log("Longest word: " + longestWord + "(" + longestWord.Length + ")");
     }
 
     private string GetNewWord()
@@ -190,6 +249,21 @@ public class GameManager : MonoBehaviour
 
         // word from the available list at random
         int index = Random.Range(0, availableWords.Count);
+        switch (CurrentDifficulty)
+        {
+            case Difficulty.Easy:
+                while (availableWords[index].Length > easyMaxLength)
+                {
+                    index = Random.Range(0, availableWords.Count);
+                }
+                break;
+            case Difficulty.Medium:
+                while (availableWords[index].Length > mediumMaxLength)
+                {
+                    index = Random.Range(0, availableWords.Count);
+                }
+                break;
+        }
         string word = availableWords[index];
         availableWords.RemoveAt(index);
         usedWords.Add(word);
@@ -222,7 +296,40 @@ public class GameManager : MonoBehaviour
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new(horizontal, vertical, 0);
-        references.playerBall.Translate(deltaTime * speed * direction);
+        references.playerBall.Translate(deltaTime * ballSpeed * direction);
+    }
+
+    private GameObject GetNewCourse(Difficulty difficulty)
+    {
+        switch (difficulty)
+        {
+            case Difficulty.Easy:
+                int index = Random.Range(0, courses.easyCourses.Length);
+                return courses.easyCourses[index];
+            case Difficulty.Medium:
+                index = Random.Range(0, courses.mediumCourses.Length);
+                return courses.mediumCourses[index];
+            case Difficulty.Hard:
+                index = Random.Range(0, courses.hardCourses.Length);
+                return courses.hardCourses[index];
+        }
+
+        throw new System.ArgumentException("Invalid difficulty");
+    }
+
+    private void SetNewCourse()
+    {
+        Transform parent = references.obstacleParent;
+
+        // remove current obstacle course
+        foreach (Transform child in parent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // get a random obstacle course
+        GameObject newCourse = GetNewCourse((Difficulty)Random.Range(0, CurrentDifficulty.GetHashCode()));
+        Instantiate(newCourse, parent);
     }
 
     [System.Serializable]
@@ -230,6 +337,7 @@ public class GameManager : MonoBehaviour
     {
         [Header("UI")]
         public Canvas canvas;
+        public TMP_Text scoreText;
         public TMP_Text wordText;
         public GameObject onScreenKeyboard;
 
@@ -241,6 +349,7 @@ public class GameManager : MonoBehaviour
         [Space(5)]
 
         [Header("Obstacles")]
+        public Transform obstacleParent;
         public Transform topGate;
         public Transform bottomGate;
     }
@@ -250,6 +359,8 @@ public class GameManager : MonoBehaviour
     {
         [HideInInspector] public bool IsReversed;
 
-        public GameObject[] normalCourses;
+        public GameObject[] easyCourses;
+        public GameObject[] mediumCourses;
+        public GameObject[] hardCourses;
     }
 }
