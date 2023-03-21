@@ -22,18 +22,17 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public static GameManager Instance { private set; get; }
 
     [HideInInspector] public bool IsInPlay;
-    [HideInInspector]
-    public ControlScheme CurrentControls
+    [HideInInspector] public ControlScheme CurrentControls
     {
         set
         {
             switch (value)
             {
                 case ControlScheme.Normal:
-                    references.onScreenKeyboard.gameObject.SetActive(false);
+                    references.onScreenKeyboard.SetActive(false);
                     break;
                 case ControlScheme.Switched:
-                    references.onScreenKeyboard.gameObject.SetActive(true);
+                    references.onScreenKeyboard.SetActive(true);
                     break;
             }
             CurrentControls = value;
@@ -42,6 +41,19 @@ public class GameManager : MonoBehaviour
         get { return CurrentControls; }
     }
     [HideInInspector] public Difficulty CurrentDifficulty;
+    [HideInInspector] public int Score
+    {
+        private set
+        {
+            foreach (TMP_Text text in references.scoreTexts)
+            {
+                text.text = value.ToString();
+            }
+            Score = value;
+        }
+
+        get { return Score; }
+    }
 
     [HideInInspector] public UnityEvent OnIncorrectLetter;
     [HideInInspector] public UnityEvent OnCorrectLetter;
@@ -58,8 +70,10 @@ public class GameManager : MonoBehaviour
     [Tooltip("Text file containing all the possible words. " +
         "Each line should be a single unique word.")]
     [SerializeField] private TextAsset wordBank;
-    public int easyMaxLength = 5;
-    public int mediumMaxLength = 8;
+    [Range(0, 10)]
+    [SerializeField] private int easyMaxLength = 5;
+    [Range(0, 20)]
+    [SerializeField] private int mediumMaxLength = 8;
     [SerializeField] private Color completedStringColor = Color.yellow;
     [SerializeField] private Color finishedWordColor = Color.green;
 
@@ -81,8 +95,6 @@ public class GameManager : MonoBehaviour
 
     private bool isWordComplete;
     private bool isCourseComplete;
-
-    private int score;
 
     public void GameOver()
     {
@@ -141,18 +153,20 @@ public class GameManager : MonoBehaviour
         IsInPlay = true;
         CurrentControls = ControlScheme.Switched;
         CurrentDifficulty = Difficulty.Easy;
+        Score = 0;
     }
 
     private void Start()
     {
         ProcessWordBank();
-        SetNewWord();
 
         OnFailCourse.AddListener(GameOver);
         OnIncorrectLetter.AddListener(GameOver);
 
         OnCompleteWord.AddListener(() => isWordComplete = true);
         OnCompleteCourse.AddListener(() => isCourseComplete = true);
+
+        SetupNewLevel();
     }
 
     private void Update()
@@ -181,9 +195,7 @@ public class GameManager : MonoBehaviour
 
     private void CompleteLevel()
     {
-        score++;
-        references.scoreText.text = score.ToString();
-
+        Score++;
         SetupNewLevel();
     }
 
@@ -226,6 +238,7 @@ public class GameManager : MonoBehaviour
 
         usedWords = new();
 
+#if DEBUG
         // debugging
         string longestWord = string.Empty;
         foreach (string word in availableWords)
@@ -236,6 +249,7 @@ public class GameManager : MonoBehaviour
             longestWord = word;
         }
         Debug.Log("Longest word: " + longestWord + "(" + longestWord.Length + ")");
+#endif
     }
 
     private string GetNewWord()
@@ -328,8 +342,12 @@ public class GameManager : MonoBehaviour
         }
 
         // get a random obstacle course
-        GameObject newCourse = GetNewCourse((Difficulty)Random.Range(0, CurrentDifficulty.GetHashCode()));
+        GameObject newCourse = GetNewCourse((Difficulty)Random.Range(0, CurrentDifficulty.GetHashCode() + 1));
         Instantiate(newCourse, parent);
+
+        // switch gates
+        references.topGate.IsGoal = !references.topGate.IsGoal;
+        references.bottomGate.IsGoal = !references.bottomGate.IsGoal;
     }
 
     [System.Serializable]
@@ -337,7 +355,7 @@ public class GameManager : MonoBehaviour
     {
         [Header("UI")]
         public Canvas canvas;
-        public TMP_Text scoreText;
+        public TMP_Text[] scoreTexts;
         public TMP_Text wordText;
         public GameObject onScreenKeyboard;
 
@@ -350,8 +368,8 @@ public class GameManager : MonoBehaviour
 
         [Header("Obstacles")]
         public Transform obstacleParent;
-        public Transform topGate;
-        public Transform bottomGate;
+        public Gate topGate;
+        public Gate bottomGate;
     }
 
     [System.Serializable]
