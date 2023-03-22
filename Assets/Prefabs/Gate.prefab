@@ -129,4 +129,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e41e0b9ab45a154fbad67a887a98f5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isGoal: 0
+  isGoalColor: {r: 0.7647059, g: 0.7647059, b: 0.7647059, a: 1}
+  notGoalColor: {r: 0.7647059, g: 0.7647059, b: 0.7647059, a: 0.3529412}

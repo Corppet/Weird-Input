@@ -7,7 +7,7 @@ public class CursorController : MonoBehaviour
 {
     [HideInInspector] public static CursorController Instance { get; private set; }
 
-    [HideInInspector] public Rigidbody2D selectedRB;
+    [HideInInspector] public Rigidbody2D SelectedRB;
 
     private Vector3 cursorPosition;
     private Vector3 offset;
@@ -23,12 +23,14 @@ public class CursorController : MonoBehaviour
             Destroy(gameObject);
         }
 
-        selectedRB = null;
+        SelectedRB = null;
     }
 
     private void Update()
     {
-        if (!GameManager.Instance.IsInPlay)
+        GameManager gm = GameManager.Instance;
+
+        if (!gm.IsInPlay || gm.IsCourseComplete)
             return;
 
         cursorPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -45,7 +47,12 @@ public class CursorController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        switch(GameManager.Instance.CurrentControls)
+        GameManager gm = GameManager.Instance;
+
+        if (!gm.IsInPlay || gm.IsCourseComplete)
+            return;
+
+        switch (GameManager.Instance.CurrentControls)
         {
             case ControlScheme.Normal:
                 DragBall();
@@ -57,9 +64,9 @@ public class CursorController : MonoBehaviour
 
     private void DragBall()
     {
-        if (selectedRB)
+        if (SelectedRB)
         {
-            selectedRB.MovePosition(cursorPosition + offset);
+            SelectedRB.MovePosition(cursorPosition + offset);
         }
     }
 
@@ -71,15 +78,15 @@ public class CursorController : MonoBehaviour
             Collider2D targetObject = Physics2D.OverlapPoint(cursorPosition);
             if (targetObject && targetObject.CompareTag("Player"))
             {
-                selectedRB = targetObject.GetComponent<Rigidbody2D>();
-                offset = selectedRB.transform.position - cursorPosition;
+                SelectedRB = targetObject.GetComponent<Rigidbody2D>();
+                offset = SelectedRB.transform.position - cursorPosition;
             }
         }
         // release the selected object
-        else if (selectedRB && Input.GetMouseButtonUp(0))
+        else if (SelectedRB && Input.GetMouseButtonUp(0))
         {
-            selectedRB.velocity = Vector2.zero;
-            selectedRB = null;
+            SelectedRB.velocity = Vector2.zero;
+            SelectedRB = null;
         }
     }
 }

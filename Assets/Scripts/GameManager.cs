@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public enum ControlScheme
 {
@@ -47,15 +48,15 @@ public class GameManager : MonoBehaviour
     {
         private set
         {
-            foreach (TMP_Text text in references.scoreTexts)
-            {
-                text.text = value.ToString();
-            }
+            //references.scoreText.text = value.ToString();
             _score = value;
         }
 
         get { return _score; }
     }
+
+    [HideInInspector] public bool IsWordComplete;
+    [HideInInspector] public bool IsCourseComplete;
 
     [HideInInspector] public UnityEvent OnIncorrectLetter;
     [HideInInspector] public UnityEvent OnCorrectLetter;
@@ -67,6 +68,21 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public string CurrentWord;
     [HideInInspector] public string RemainingString;
     [HideInInspector] public string CompletedString;
+
+    private float _remainingTime;
+    [HideInInspector] public float RemainingTime
+    {
+        set
+        {
+            foreach (TMP_Text timerText in references.timerTexts)
+            {
+                timerText.text = value.ToString("F2");
+            }
+            _remainingTime = value;
+        }
+
+        get { return _remainingTime; }
+    }
 
     [Header("Word Settings")]
     [Tooltip("Text file containing all the possible words. " +
@@ -86,6 +102,14 @@ public class GameManager : MonoBehaviour
     public float ballSpeed = 10f;
     [Range(0f, 1f)]
     public float switchedControlsRate = .5f;
+    [Range(0f, 60f)]
+    [Tooltip("The amount off time available to complete a level. Measured in seconds.")]
+    public float levelTimer = 15f;
+
+    [Space(5)]
+
+    [Header("Controls")]
+    [SerializeField] private KeyCode menuKey = KeyCode.Escape;
 
     [Space(10)]
 
@@ -95,13 +119,22 @@ public class GameManager : MonoBehaviour
     private List<string> availableWords;
     private List<string> usedWords;
 
-    private bool isWordComplete;
-    private bool isCourseComplete;
+    public void ReturnToMenu()
+    {
+        SceneManager.LoadScene(0);
+    }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
 
     public void GameOver()
     {
         IsInPlay = false;
         CurrentControls = ControlScheme.Normal;
+        references.scoreText.text = "Score: " + Score;
+        references.gameOverPanel.gameObject.SetActive(true);
 
 #if DEBUG
         Debug.Log("Game Over");
@@ -111,11 +144,11 @@ public class GameManager : MonoBehaviour
     public void SetupNewLevel()
     {
         // new word
-        isWordComplete = false;
+        IsWordComplete = false;
         SetNewWord();
 
         // new obstacle course
-        isCourseComplete = false;
+        IsCourseComplete = false;
         SetNewCourse();
 
         // attempt to switch controls
@@ -127,6 +160,9 @@ public class GameManager : MonoBehaviour
         {
             CurrentControls = ControlScheme.Normal;
         }
+
+        // reset timer
+        RemainingTime = levelTimer;
     }
 
     public void InputLetters(string letters)
@@ -158,22 +194,32 @@ public class GameManager : MonoBehaviour
 
         // initialize variables
         IsInPlay = true;
-        CurrentControls = ControlScheme.Switched;
+        CurrentControls = ControlScheme.Normal;
         CurrentDifficulty = Difficulty.Easy;
         Score = 0;
+        RemainingTime = levelTimer;
+        IsWordComplete = false;
+        IsCourseComplete = false;
     }
 
     private void Start()
     {
+        // setup gates
+        references.topGate.IsGoal = false;
+        references.bottomGate.IsGoal = true;
+
         OnFailCourse.AddListener(GameOver);
         OnIncorrectLetter.AddListener(GameOver);
 
-        OnCompleteWord.AddListener(() => isWordComplete = true);
-        OnCompleteCourse.AddListener(() => isCourseComplete = true);
+        OnCompleteWord.AddListener(() => IsWordComplete = true);
+        OnCompleteCourse.AddListener(() => IsCourseComplete = true);
 
-        // setup gates
-        references.topGate.IsGoal = true;
-        references.bottomGate.IsGoal = false;
+#if DEBUG
+        OnCompleteWord.AddListener(() => Debug.Log("Word complete"));
+        OnCompleteCourse.AddListener(() => Debug.Log("Course complete"));
+#endif
+
+        references.gameOverPanel.gameObject.SetActive(false);
 
         ProcessWordBank();
         SetupNewLevel();
@@ -181,6 +227,20 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(menuKey))
+        {
+            ReturnToMenu();
+        }
+
+        if (!IsInPlay)
+            return;
+
+        RemainingTime -= Time.deltaTime;
+        if (RemainingTime < 0f)
+        {
+            GameOver();
+        }
+
         switch (CurrentControls)
         {
             case ControlScheme.Normal:
@@ -191,7 +251,7 @@ public class GameManager : MonoBehaviour
                 break;
         }
 
-        if (isWordComplete && isCourseComplete)
+        if (IsWordComplete && IsCourseComplete)
         {
             CompleteLevel();
         }
@@ -211,6 +271,9 @@ public class GameManager : MonoBehaviour
 
     private void InputChar(char c)
     {
+        if (IsWordComplete)
+            return;
+
         if (RemainingString.Length > 0 && RemainingString[0] == c)
         {
             CompletedString += RemainingString[0];
@@ -229,6 +292,8 @@ public class GameManager : MonoBehaviour
                 + CompletedString + "</color>";
             OnCompleteWord.Invoke();
         }
+
+        AudioManager.Instance.PlayKeyboard();
     }
 
     /// <summary>
@@ -365,9 +430,11 @@ public class GameManager : MonoBehaviour
     {
         [Header("UI")]
         public Canvas canvas;
-        public TMP_Text[] scoreTexts;
+        public TMP_Text scoreText;
+        public TMP_Text[] timerTexts;
         public TMP_Text wordText;
         public GameObject onScreenKeyboard;
+        public RectTransform gameOverPanel;
 
         [Space(5)]
 

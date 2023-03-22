@@ -7,9 +7,11 @@ public class Obstacle : MonoBehaviour
 {
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Player"))
+        GameManager gm = GameManager.Instance;
+
+        if (collision.CompareTag("Player") && !gm.IsCourseComplete)
         {
-            GameManager.Instance.OnFailCourse.Invoke();
+            gm.OnFailCourse.Invoke();
         }
     }
 }

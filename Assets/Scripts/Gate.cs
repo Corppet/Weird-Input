@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class Gate : MonoBehaviour
 {
-    private bool _isGoal;
-    [HideInInspector] 
+    private bool _isGoal = false;
+    [HideInInspector]
     public bool IsGoal
     {
         set
@@ -24,15 +24,14 @@ public class Gate : MonoBehaviour
         get { return _isGoal; }
     }
 
+    [SerializeField] private Color isGoalColor = Color.gray;
     [SerializeField] private Color notGoalColor = Color.clear;
 
     private SpriteRenderer spriteRenderer; 
-    private Color isGoalColor;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        isGoalColor = spriteRenderer.color;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
