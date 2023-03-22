@@ -4,12 +4,13 @@ using UnityEngine;
 
 public class Gate : MonoBehaviour
 {
+    private bool _isGoal;
     [HideInInspector] 
     public bool IsGoal
     {
         set
         {
-            IsGoal = value;
+            _isGoal = value;
             if (value)
             {
                 spriteRenderer.color = isGoalColor;
@@ -20,7 +21,7 @@ public class Gate : MonoBehaviour
             }
         }
 
-        get { return IsGoal; }
+        get { return _isGoal; }
     }
 
     [SerializeField] private Color notGoalColor = Color.clear;
@@ -31,6 +32,7 @@ public class Gate : MonoBehaviour
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        isGoalColor = spriteRenderer.color;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)

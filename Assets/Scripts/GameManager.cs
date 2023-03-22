@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public static GameManager Instance { private set; get; }
 
     [HideInInspector] public bool IsInPlay;
+    private ControlScheme _currentControls;
     [HideInInspector] public ControlScheme CurrentControls
     {
         set
@@ -35,12 +36,13 @@ public class GameManager : MonoBehaviour
                     references.onScreenKeyboard.SetActive(true);
                     break;
             }
-            CurrentControls = value;
+            _currentControls = value;
         }
 
-        get { return CurrentControls; }
+        get { return _currentControls; }
     }
     [HideInInspector] public Difficulty CurrentDifficulty;
+    private int _score;
     [HideInInspector] public int Score
     {
         private set
@@ -49,10 +51,10 @@ public class GameManager : MonoBehaviour
             {
                 text.text = value.ToString();
             }
-            Score = value;
+            _score = value;
         }
 
-        get { return Score; }
+        get { return _score; }
     }
 
     [HideInInspector] public UnityEvent OnIncorrectLetter;
@@ -99,6 +101,11 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         IsInPlay = false;
+        CurrentControls = ControlScheme.Normal;
+
+#if DEBUG
+        Debug.Log("Game Over");
+#endif
     }
 
     public void SetupNewLevel()
@@ -149,7 +156,7 @@ public class GameManager : MonoBehaviour
         OnCompleteCourse = new();
         OnFailCourse = new();
 
-        // initialize variabbles
+        // initialize variables
         IsInPlay = true;
         CurrentControls = ControlScheme.Switched;
         CurrentDifficulty = Difficulty.Easy;
@@ -158,14 +165,17 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        ProcessWordBank();
-
         OnFailCourse.AddListener(GameOver);
         OnIncorrectLetter.AddListener(GameOver);
 
         OnCompleteWord.AddListener(() => isWordComplete = true);
         OnCompleteCourse.AddListener(() => isCourseComplete = true);
 
+        // setup gates
+        references.topGate.IsGoal = true;
+        references.bottomGate.IsGoal = false;
+
+        ProcessWordBank();
         SetupNewLevel();
     }
 
