@@ -8,7 +8,8 @@ public class AudioManager : MonoBehaviour
     [HideInInspector] public static AudioManager Instance { get; private set; }
 
     [SerializeField] private AudioClip[] keyboardSounds;
-    [SerializeField] private AudioClip[] incompleteSounds;
+    [SerializeField] private AudioClip[] switchSounds;
+    [SerializeField] private AudioClip[] failSounds;
 
     private AudioSource audioSource;
 
@@ -17,9 +18,14 @@ public class AudioManager : MonoBehaviour
         audioSource.PlayOneShot(keyboardSounds[Random.Range(0, keyboardSounds.Length)]);
     }
 
-    public void PlayIncomplete()
+    public void PlaySwitch()
     {
-        audioSource.PlayOneShot(incompleteSounds[Random.Range(0, incompleteSounds.Length)]);
+        audioSource.PlayOneShot(switchSounds[Random.Range(0, switchSounds.Length)]);
+    }
+
+    public void PlayFail()
+    {
+        audioSource.PlayOneShot(failSounds[Random.Range(0, failSounds.Length)]);
     }
 
     private void Awake()

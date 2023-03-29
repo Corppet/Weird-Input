@@ -41,6 +41,7 @@ public class CursorController : MonoBehaviour
                 DragAndDrop();
                 break;
             case ControlScheme.Switched:
+                SelectedRB = null;
                 break;
         }
     }

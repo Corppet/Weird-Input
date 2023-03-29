@@ -20,6 +20,8 @@ public enum Difficulty
 
 public class GameManager : MonoBehaviour
 {
+    public bool IsLevelTesting = false;
+
     [HideInInspector] public static GameManager Instance { private set; get; }
 
     [HideInInspector] public bool IsInPlay;
@@ -32,12 +34,19 @@ public class GameManager : MonoBehaviour
             {
                 case ControlScheme.Normal:
                     references.onScreenKeyboard.SetActive(false);
+                    references.switchPanel.SetActive(false);
                     break;
                 case ControlScheme.Switched:
                     references.onScreenKeyboard.SetActive(true);
+                    references.switchPanel.SetActive(true);
                     break;
             }
-            _currentControls = value;
+
+            if (_currentControls != value)
+            {
+                _currentControls = value;
+                AudioManager.Instance.PlaySwitch();
+            }
         }
 
         get { return _currentControls; }
@@ -50,6 +59,14 @@ public class GameManager : MonoBehaviour
         {
             //references.scoreText.text = value.ToString();
             _score = value;
+            if (value >= mediumMinScore)
+            {
+                CurrentDifficulty = Difficulty.Medium;
+            }
+            if (value >= hardMinScore)
+            {
+                CurrentDifficulty = Difficulty.Hard;
+            }
         }
 
         get { return _score; }
@@ -90,8 +107,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TextAsset wordBank;
     [Range(0, 10)]
     [SerializeField] private int easyMaxLength = 5;
-    [Range(0, 20)]
+    [Range(5, 50)]
     [SerializeField] private int mediumMaxLength = 8;
+    [Range(10, 100)]
+    [SerializeField] private int hardMaxLength = 20;
     [SerializeField] private Color completedStringColor = Color.yellow;
     [SerializeField] private Color finishedWordColor = Color.green;
 
@@ -108,8 +127,17 @@ public class GameManager : MonoBehaviour
 
     [Space(5)]
 
+    [Header("Difficulty Settings")]
+    [Range(0, 50)]
+    [SerializeField] private int mediumMinScore = 10;
+    [Range(0, 100)]
+    [SerializeField] private int hardMinScore = 20;
+
+    [Space(5)]
+
     [Header("Controls")]
     [SerializeField] private KeyCode menuKey = KeyCode.Escape;
+    [SerializeField] private KeyCode maxDifficultyKey = KeyCode.LeftAlt;
 
     [Space(10)]
 
@@ -131,10 +159,15 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
+        if (!IsInPlay)
+            return;
+
         IsInPlay = false;
         CurrentControls = ControlScheme.Normal;
         references.scoreText.text = "Score: " + Score;
         references.gameOverPanel.gameObject.SetActive(true);
+
+        AudioManager.Instance.PlayFail();
 
 #if DEBUG
         Debug.Log("Game Over");
@@ -230,6 +263,12 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(menuKey))
         {
             ReturnToMenu();
+        }
+
+        if (Input.GetKeyDown(maxDifficultyKey))
+        {
+            CurrentDifficulty = Difficulty.Hard;
+            SetupNewLevel();
         }
 
         if (!IsInPlay)
@@ -352,6 +391,12 @@ public class GameManager : MonoBehaviour
                     index = Random.Range(0, availableWords.Count);
                 }
                 break;
+            case Difficulty.Hard:
+                while (availableWords[index].Length > hardMaxLength)
+                {
+                    index = Random.Range(0, availableWords.Count);
+                }
+                break;
         }
         string word = availableWords[index];
         availableWords.RemoveAt(index);
@@ -381,6 +426,9 @@ public class GameManager : MonoBehaviour
 
     private void MoveBall(float deltaTime)
     {
+        if (IsCourseComplete)
+            return;
+
         // move the player ball based on horizontal and vertical input
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
@@ -408,17 +456,20 @@ public class GameManager : MonoBehaviour
 
     private void SetNewCourse()
     {
-        Transform parent = references.obstacleParent;
-
-        // remove current obstacle course
-        foreach (Transform child in parent)
+        if (!IsLevelTesting)
         {
-            Destroy(child.gameObject);
-        }
+            Transform parent = references.obstacleParent;
 
-        // get a random obstacle course
-        GameObject newCourse = GetNewCourse((Difficulty)Random.Range(0, CurrentDifficulty.GetHashCode() + 1));
-        Instantiate(newCourse, parent);
+            // remove current obstacle course
+            foreach (Transform child in parent)
+            {
+                Destroy(child.gameObject);
+            }
+
+            // get a random obstacle course
+            GameObject newCourse = GetNewCourse((Difficulty)Random.Range(0, CurrentDifficulty.GetHashCode() + 1));
+            Instantiate(newCourse, parent);
+        }
 
         // switch gates
         references.topGate.IsGoal = !references.topGate.IsGoal;
@@ -433,6 +484,7 @@ public class GameManager : MonoBehaviour
         public TMP_Text scoreText;
         public TMP_Text[] timerTexts;
         public TMP_Text wordText;
+        public GameObject switchPanel;
         public GameObject onScreenKeyboard;
         public RectTransform gameOverPanel;
 
